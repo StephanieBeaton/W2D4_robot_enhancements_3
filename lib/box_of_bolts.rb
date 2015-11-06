@@ -8,4 +8,10 @@ class BoxOfBolts < Item
   def feed(robot)
     robot.heal(20)
   end
+
+  def print
+    puts "BoxOfBolts"
+    super
+  end
+
 end

@@ -10,7 +10,14 @@ class Weapon < Item
   end
 
   def hit(robot)
-    robot.wound(45)
+    robot.wound(damage)
+  end
+
+  def print
+    puts "Weapon"
+    puts "name = #{name}"
+    puts "weight = #{weight}"
+    puts "damage points = #{damage}"
   end
 
 end

@@ -1,5 +1,13 @@
 class Robot
 
+  class RobotAlreadyDeadError < StandardError
+
+  end
+
+  class UnattackableEnemy < StandardError
+
+  end
+
   CAPACITY = 250
 
   attr_reader :position, :items, :health
@@ -80,15 +88,73 @@ class Robot
     end
   end
 
+  def heal!(points)
+    # raise an exception if the robot is already at 0 health or less.
+    # Once a robot is dead, it cannot be revived.
+    # begin
+
+      raise RobotAlreadyDeadError if health <= 0
+
+      if (@health + points) > 100
+        @health = 100
+      else
+        @health += points
+      end
+
+    # rescue RobotAlreadyDeadError
+    #   binding.pry
+    #   puts "robot has health of 0 or less. Cannot heal! robot."
+    # end
+
+  end
+
   def attack(other_robot)
 
     if equipped_weapon.nil?
       other_robot.wound(5)
-
     else
       equipped_weapon.hit(other_robot)
     end
 
+  end
+
+  def attack!(other_robot)
+    # begin
+      raise UnattackableEnemy if other_robot.class != Robot
+
+      if equipped_weapon.nil?
+        other_robot.wound(5)
+      else
+        equipped_weapon.hit(other_robot)
+      end
+
+    # rescue UnattackableEnemy
+    #   puts "Cannot attack! a non robot."
+    # end
+  end
+
+  def print
+
+    puts ""
+    puts "Robot"
+    puts "health = #{health}"
+
+    puts "equipped_weapon"
+    if equipped_weapon.nil?
+      puts "nil"
+    else
+      equipped_weapon.print
+    end
+
+    puts "items"
+    if @items.length == 0
+      puts "[]"
+    else
+      items.each do |item|
+        item.print
+      end
+    end
+    puts ""
 
   end
 
