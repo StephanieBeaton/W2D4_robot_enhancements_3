@@ -45,9 +45,6 @@ class Robot
 
   def pick_up(item)
 
-    puts "in pick_up item = #{item}"
-    puts "equipped_weapon #{equipped_weapon}"
-
     # binding.pry
 
     if (CAPACITY - items_weight) >= item.weight
@@ -57,6 +54,14 @@ class Robot
       if item.class == PlasmaCannon || item.class == Laser
         # binding.pry
         self.equipped_weapon = item
+      end
+
+      # The robot should now be smart enough that if it picks up health and needs
+      # to consume it, then it will automatically feed on the bolts.
+      # It should only feed on the bolts if it needs all of the energy from them
+      if item.class == BoxOfBolts
+         #  should automatically feed box of bolts if at or below 80hp
+         item.feed(self) if health <= 80
       end
 
       true
@@ -108,12 +113,146 @@ class Robot
 
   end
 
+
+  # Since grenades have a range of 2, if the robot has one equipped,
+  # it can attack an enemy robot that is 2 tiles away instead of just 1 tile away
+
+  def block_within_2_blocks_to_this_robot(other_robot)
+
+    return true if block_next_to_this_robot?(other_robot)
+
+    # is other_robot 2 blocks away from this robot ??
+
+    #  ...check 16 positions
+
+    other_robot_position = other_robot.position
+
+    # binding.pry
+    # test for 5 positions two squares to left of this robot
+    if other_robot_position[0] == position[0] - 2 &&
+      ((other_robot_position[1] == position[1] + 2) ||
+       (other_robot_position[1] == position[1] + 1) ||
+       (other_robot_position[1] == position[1] + 0) ||
+       (other_robot_position[1] == position[1] - 1) ||
+       (other_robot_position[1] == position[1] - 2) )
+          return true
+    end
+
+    # test for 5 positions two squares to right of this robot
+    if other_robot_position[0] == position[0] + 2 &&
+      ((other_robot_position[1] == position[1] + 2) ||
+       (other_robot_position[1] == position[1] + 1) ||
+       (other_robot_position[1] == position[1] + 0) ||
+       (other_robot_position[1] == position[1] - 1) ||
+       (other_robot_position[1] == position[1] - 2) )
+          return true
+    end
+
+    # test for 3 position two squares above this robot
+    if other_robot_position[1] == position[1] + 2 &&
+     ((other_robot_position[0] == position[0] - 1) ||
+      (other_robot_position[0] == position[0] - 0) ||
+      (other_robot_position[0] == position[0] + 1))
+          return true
+    end
+
+    # test for 3 position two squares below this robot
+    if other_robot_position[1] == position[1] - 2 &&
+     ((other_robot_position[0] == position[0] - 1) ||
+      (other_robot_position[0] == position[0] - 0) ||
+      (other_robot_position[0] == position[0] + 1))
+          return true
+    end
+
+    false
+
+  end
+
+  # Robots can only attack enemy robots that are in the tile/block next to them
+  # So if an enemy robot is directly above, below, or next to the robot,
+  # then it will wound the enemy robot
+  # Otherwise the attack method should not do anything
+  def block_next_to_this_robot?(other_robot)
+
+    position_to_left = []
+    position_to_right = []
+    position_above = []
+    position_below = []
+
+    position_to_left[0] = position[0] - 1
+    position_to_left[1] = position[1]
+
+    position_below[0] = position[0]
+    position_below[1] = position[1] - 1
+
+    position_to_right[0] = position[0] + 1
+    position_to_right[1] = position[1]
+
+    position_above[0] = position[0]
+    position_above[1] = position[1] + 1
+
+    other_robot_position = other_robot.position
+
+    # binding.pry
+
+    return true  if position_to_left[0] == other_robot_position[0] &&
+                    position_to_left[1] == other_robot_position[1]
+
+    return true  if position_below[0] == other_robot_position[0] &&
+                    position_below[1] == other_robot_position[1]
+
+    return true  if position_to_right[0] == other_robot_position[0] &&
+                    position_to_right[1] == other_robot_position[1]
+
+    return true  if position_above[0] == other_robot_position[0] &&
+                    position_above[1] == other_robot_position[1]
+
+    false
+
+  end
+
   def attack(other_robot)
 
-    if equipped_weapon.nil?
-      other_robot.wound(5)
-    else
-      equipped_weapon.hit(other_robot)
+    # Since grenades have a range of 2, if the robot has one equipped,
+    # it can attack an enemy robot that is 2 tiles away instead of just 1 tile away
+    # That said, it will also discard/unequip the grenade
+    # binding.pry
+
+    if equipped_weapon.is_a?(Grenade)
+
+      # binding.pry
+
+      if block_within_2_blocks_to_this_robot(other_robot)
+
+        # binding.pry
+
+        equipped_weapon.hit(other_robot)
+
+        # binding.pry
+        # remove from items array too
+        # get FIRST index of element searched
+        index = items.index{ |item| item.object_id == equipped_weapon.object_id }
+        # binding.pry
+        # remove the element at that index
+        items.slice!(index) if index.nil? == false
+        # binding.pry
+        self.equipped_weapon = nil
+        # binding.pry
+
+      end
+
+    elsif block_next_to_this_robot?(other_robot)
+
+      # Robots can only attack enemy robots that are in the tile/block next to them
+      # So if an enemy robot is directly above, below, or next to the robot,
+      # then it will wound the enemy robot
+      # Otherwise the attack method should not do anything
+
+      if equipped_weapon.nil?
+        other_robot.wound(5)
+      else
+        equipped_weapon.hit(other_robot)
+      end
     end
 
   end
