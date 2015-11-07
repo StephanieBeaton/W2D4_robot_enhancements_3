@@ -14,20 +14,21 @@ describe Robot do
   describe "#wound" do
     it "decreases health" do
       @robot.wound(20)
-      expect(@robot.health).to eq(80)
+      expect(@robot.health).to eq(100)
+      expect(@robot.shield).to eq(30)
     end
 
     it "doesn't decrease health below 0" do
-      @robot.wound(150)
+      @robot.wound(200)
       expect(@robot.health).to eq(0)
     end
   end
 
   describe "#heal" do
     it "increases health" do
-      @robot.wound(40)
+      @robot.wound(80)
       @robot.heal(20)
-      expect(@robot.health).to eq(80)
+      expect(@robot.health).to eq(90)
     end
 
     it "doesn't increase health over 100" do
@@ -39,6 +40,7 @@ describe Robot do
   describe "#attack" do
     it "wounds other robot with weak default attack (5 hitpoints)" do
       robot2 = Robot.new
+      robot2.move_right
 
       # Create an expectation that by the end of this test,
       # the second robot will have had #wound method called on it

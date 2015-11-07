@@ -1,3 +1,6 @@
+How to run these tests !!
+bundle exec rspec spec/01_*.rb
+
 Mock Assessment Test: iRobot
 ====================
 

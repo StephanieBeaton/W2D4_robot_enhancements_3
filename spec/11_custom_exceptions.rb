@@ -20,6 +20,7 @@ describe Robot do
   describe "#heal!" do
     it "should throw custom Exception RobotAlreadyDeadError when healing a dead robot" do
       @another_robot = Robot.new
+      @another_robot.shield = 0
       @another_robot.wound(100)    #  kill another_robot
       expect { @another_robot.heal!(20) }.to raise_error(Robot::RobotAlreadyDeadError)
     end

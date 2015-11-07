@@ -21,6 +21,7 @@ describe Robot do
   describe "#attack" do
     before :each do
       @robot2 = Robot.new
+      @robot2.move_left
       @weapon = PlasmaCannon.new
     end
 

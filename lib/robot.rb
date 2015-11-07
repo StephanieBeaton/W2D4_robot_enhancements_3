@@ -10,31 +10,197 @@ class Robot
 
   CAPACITY = 250
 
+  MAX_SHIELD_POINTS = 50
+
+  @@robot_list = []
+
+
+  #   board
+  #
+  #    -3 -2 -1 0 1 2 3
+  #  3  R
+  #  2
+  #  1
+  #  0          2R
+  # -1
+  # -2
+  # -3
+
+  @@board = []   # <-- outer arrays are rows, inner arrays are columns
+
+  @@board = [
+  [[],[],[],[],[],[],[],[],[],[]],
+  [[],[],[],[],[],[],[],[],[],[]],
+  [[],[],[],[],[],[],[],[],[],[]],
+  [[],[],[],[],[],[],[],[],[],[]],
+  [[],[],[],[],[],[],[],[],[],[]],
+  [[],[],[],[],[],[],[],[],[],[]],
+  [[],[],[],[],[],[],[],[],[],[]],
+  [[],[],[],[],[],[],[],[],[],[]],
+  [[],[],[],[],[],[],[],[],[],[]],
+  [[],[],[],[],[],[],[],[],[],[]]
+  ]
+
+
   attr_reader :position, :items, :health
 
-  attr_accessor :equipped_weapon
+  attr_accessor :equipped_weapon, :shield
 
   def initialize
     @position = [0,0]
+    @@board[0][0] = [] if @@board[0][0] == nil
+    @@board[0][0] << self
     @items = []
     @health = 100
     @equipped_weapon = nil
+    @shield = MAX_SHIELD_POINTS
+    @@robot_list << self
+  end
+
+
+  # 19 - Scanning
+
+  # A given robot should be able to scan its surroundings
+  #  (tiles immediately next to its current @position)
+
+  # Note: You should leverage the class method  in_position(x, y)
+  # implemented in #18
+
+  # return true is any of the surrounding tiles are occupied
+
+  def self.scan(robot)
+
+    position = robot.position
+
+    #  must check 8 surrounding tiles
+
+    position_to_left = []
+    position_to_right = []
+    position_above = []
+    position_below = []
+    position_to_NW = []
+    position_to_NE = []
+    position_to_SW = []
+    position_to_SE = []
+
+    position_to_left[0] = position[0] - 1
+    position_to_left[1] = position[1]
+
+    position_below[0] = position[0]
+    position_below[1] = position[1] - 1
+
+    position_to_right[0] = position[0] + 1
+    position_to_right[1] = position[1]
+
+    position_above[0] = position[0]
+    position_above[1] = position[1] + 1
+
+    position_to_NW[0] = position[0] - 1
+    position_to_NW[1] = position[1] + 1
+
+
+    position_to_NE[0] = position[0] + 1
+    position_to_NE[1] = position[0] + 1
+
+
+    position_to_SW[0] = position[0] - 1
+    position_to_SW[1] = position[1] - 1
+
+    position_to_SE[0] = position[0] + 1
+    position_to_SE[1] = position[1] - 1
+
+    return true if @@board[position_to_left[0], position_to_left[1]] != []
+
+    return true if @@board[position_to_right[0], position_to_right[1]] != []
+
+    return true if @@board[position_above[0], position_above[1]] != []
+
+    return true if @@board[position_below[0], position_below[1]] != []
+
+    return true if @@board[position_NW[0], position_NW[1]] != []
+
+    return true if @@board[position_NE[0], position_NE[1]] != []
+
+    return true if @@board[position_SW[0], position_SW[1]] != []
+
+    return true if @@board[position_SE[0], position_SE[1]] != []
+
+  end
+
+  # def self.initialize_board
+
+  #   for i in -20..20
+  #     @@array[i] = []
+  #     for j in -20..20
+  #       @@array[i] << []
+  #     end
+  #   end
+  # end
+
+  #  Robot.in_position(x, y)
+  #
+  # The Robot class can be asked to return all robots
+  # in a given position (x,y).
+  # It should return an array of all the robots
+  # since multiple robots could potentially be at position 0,0 (for example)
+  def self.in_position(x, y)
+
+    @@board[x][y]
+  end
+
+  def self.list
+    @@robot_list
+  end
+
+
+  def self.remove_robot_from_position_on_board(x, y, robot)
+    # remove this robot from the array at old position on the board
+
+    temp_array = @@board[x][y]  # <-- returns an array, remove from array
+
+    if temp_array != nil
+      temp_array.delete_if { |item| item.object_id == robot.object_id }
+      @@board[x][y] = temp_array
+    end
+
+  end
+
+
+  def self.add_robot_to_position_on_board(x, y, robot)
+   temp_array = @@board[x][y]
+
+    if temp_array == nil
+      temp_array = []
+    end
+
+    temp_array << robot
+    @@board[x][y] = temp_array
+
   end
 
   def move_left
+    # remove this robot from the array at old position on the board
+    Robot.remove_robot_from_position_on_board(position[0], position[1], self)
     position[0] -= 1
+    Robot.add_robot_to_position_on_board(position[0], position[1], self)
   end
 
   def move_right
+    Robot.remove_robot_from_position_on_board(position[0], position[1], self)
     position[0] += 1
+    Robot.add_robot_to_position_on_board(position[0], position[1], self)
   end
 
   def move_up
+    Robot.remove_robot_from_position_on_board(position[0], position[1], self)
     position[1] += 1
+    Robot.add_robot_to_position_on_board(position[0], position[1], self)
   end
 
   def move_down
+    Robot.remove_robot_from_position_on_board(position[0], position[1], self)
     position[1] -= 1
+    Robot.add_robot_to_position_on_board(position[0], position[1], self)
   end
 
 
@@ -78,19 +244,24 @@ class Robot
   end
 
   def wound(points)
-    if (@health - points) < 0
-      @health = 0
-    else
-      @health -= points
-    end
+
+    remaining = [shield - points, 0].min
+    remaining = remaining.abs
+
+    @shield = [0, shield - points].max
+
+    @health = [0, health - remaining].max
+
   end
 
   def heal(points)
-    if (@health + points) > 100
-      @health = 100
-    else
-      @health += points
-    end
+
+    remaining = [@health + points - 100, 0].max
+
+    @health = [@health + points, 100].min
+
+    @shield = [@shield + remaining, MAX_SHIELD_POINTS].min
+
   end
 
   def heal!(points)
@@ -100,11 +271,17 @@ class Robot
 
       raise RobotAlreadyDeadError if health <= 0
 
-      if (@health + points) > 100
-        @health = 100
-      else
-        @health += points
-      end
+      remaining = [@health + points - 100, 0].max
+
+      @health = [@health + points, 100].min
+
+      @shield = [@shield + remaining, MAX_SHIELD_POINTS].min
+
+      # if (@health + points) > 100
+      #   @health = 100
+      # else
+      #   @health += points
+      # end
 
     # rescue RobotAlreadyDeadError
     #   binding.pry
@@ -195,6 +372,9 @@ class Robot
 
     # binding.pry
 
+    return true if position[0] == other_robot_position[0] &&
+                   position[1] == other_robot_position[1]
+
     return true  if position_to_left[0] == other_robot_position[0] &&
                     position_to_left[1] == other_robot_position[1]
 
@@ -210,6 +390,9 @@ class Robot
     false
 
   end
+
+  # test 09
+  # expect(@weapon).to receive(:hit).with(@robot2)
 
   def attack(other_robot)
 
@@ -256,6 +439,7 @@ class Robot
     end
 
   end
+
 
   def attack!(other_robot)
     # begin
